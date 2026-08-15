@@ -505,6 +505,24 @@ export function RouteComponent() {
           </Stack>
         </>
       )}
+
+      <Divider />
+
+      <Stack gap="md">
+        <Stack gap="xxs">
+          <Title order={5}>{t('Conversation Defaults')}</Title>
+          <Text size="sm" c="chatbox-tertiary">
+            {t(
+              'When enabled, new conversations start as temporary and are not saved until you click the save button.'
+            )}
+          </Text>
+        </Stack>
+        <Switch
+          label={t('New conversations are temporary by default')}
+          checked={settings.newSessionTemporaryByDefault}
+          onChange={(e) => setSettings({ newSessionTemporaryByDefault: e.currentTarget.checked })}
+        />
+      </Stack>
     </Stack>
   )
 }

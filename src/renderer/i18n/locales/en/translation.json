@@ -218,6 +218,16 @@
   "clean it up": "clean it up",
   "Clean up": "Clean up",
   "Clear All Messages": "Clear All Messages",
+  "Conversation saved to your chat list": "Conversation saved to your chat list",
+  "Conversation Defaults": "Conversation Defaults",
+  "Failed to save conversation": "Failed to save conversation",
+  "New conversations are temporary by default": "New conversations are temporary by default",
+  "Save conversation": "Save conversation",
+  "Temporary": "Temporary",
+  "This conversation is temporary and not saved. Save it to keep it.":
+    "This conversation is temporary and not saved. Save it to keep it.",
+  "When enabled, new conversations start as temporary and are not saved until you click the save button.":
+    "When enabled, new conversations start as temporary and are not saved until you click the save button.",
   "Clear Conversation List": "Clear Conversation List",
   "Click here to set up": "Click here to set up",
   "Click here to start a new chat": "Click here to start a new chat",

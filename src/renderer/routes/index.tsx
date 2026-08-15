@@ -33,7 +33,7 @@ import useVersion from '@/hooks/useVersion'
 import * as remote from '@/packages/remote'
 import { router } from '@/router'
 import { useAuthInfoStore } from '@/stores/authInfoStore'
-import { createSession as createSessionStore } from '@/stores/chatStore'
+import { createSession as createSessionStore, createTemporarySession } from '@/stores/chatStore'
 import { resolveChatboxLicenseDefaultModel } from '@/stores/defaultChatModel'
 import { getHasCompletedFirstSuccessfulChat } from '@/stores/firstSuccessfulChat'
 import { generate, submitNewUserMessage, switchCurrentSession } from '@/stores/sessionActions'
@@ -92,6 +92,7 @@ function Index() {
 
   const { providers } = useProviders()
   const defaultChatModel = useSettingsStore((s) => s.defaultChatModel)
+  const newSessionTemporaryByDefault = useSettingsStore((s) => s.newSessionTemporaryByDefault ?? true)
   const hasLicense = useSettingsStore((s) => Boolean(s.licenseKey))
   const licenseKey = useSettingsStore((s) => s.licenseKey)
   const licenseDetail = useSettingsStore((s) => s.licenseDetail)
@@ -277,7 +278,7 @@ function Index() {
       settingsPatch?: Partial<SessionSettings>
       settingsOverride?: Partial<SessionSettings>
     }) => {
-      const newSession = await createSessionStore({
+      const sessionPayload: Parameters<typeof createSessionStore>[0] = {
         name: options?.name ?? session.name,
         type: 'chat',
         assistantAvatarKey: session.assistantAvatarKey,
@@ -297,7 +298,11 @@ function Index() {
           ...(newSessionState.agentFullAccess ? { agentFullAccess: true } : {}),
           ...options?.settingsOverride,
         },
-      })
+      }
+      // 默认新会话为临时会话（不落盘），除非用户在设置中关闭该开关
+      const newSession = newSessionTemporaryByDefault
+        ? await createTemporarySession(sessionPayload)
+        : await createSessionStore(sessionPayload)
 
       if (session.copilotId) {
         void remote
@@ -349,6 +354,7 @@ function Index() {
       clearSessionWebBrowsing,
       sessionAgentModeMap,
       clearSessionAgentMode,
+      newSessionTemporaryByDefault,
     ]
   )
 
