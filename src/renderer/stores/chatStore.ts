@@ -34,6 +34,7 @@ import { uiStore } from './uiStore'
 const log = getLogger('chat-store')
 
 import { clearScrollPositionCache } from '@/components/chat/MessageList'
+import { isTemporarySession, markSessionTemporary, unmarkSessionTemporary } from './atoms/sessionAtoms'
 import { cleanupSessionAtomCache } from './atoms/throttleWriteSessionAtom'
 import {
   assertNoMessageDataUpdate,
@@ -307,8 +308,12 @@ async function runInChunks<T>(items: T[], chunkSize: number, worker: (item: T) =
 }
 
 // create session
-export async function createSession(newSession: Omit<Session, 'id'>, previousId?: string) {
-  console.debug('chatStore', 'createSession', newSession)
+export async function createSession(
+  newSession: Omit<Session, 'id'>,
+  previousId?: string,
+  options?: { temporary?: boolean }
+) {
+  console.debug('chatStore', 'createSession', newSession, options)
   const { chat: lastUsedChatModel, picture: lastUsedPictureModel } = lastUsedModelStore.getState()
   const session = {
     ...newSession,
@@ -318,6 +323,14 @@ export async function createSession(newSession: Omit<Session, 'id'>, previousId?
       ...newSession.settings,
     },
   }
+
+  // 临时会话：只写内存缓存，不落盘、不创建 meta 记录、不进入会话列表
+  if (options?.temporary) {
+    _setSessionCache(session.id, session)
+    markSessionTemporary(session.id)
+    return session
+  }
+
   await storage.setItemNow(StorageKeyGenerator.session(session.id), session)
 
   const metaStorage = await getMetaStorage()
@@ -346,6 +359,51 @@ export async function createSession(newSession: Omit<Session, 'id'>, previousId?
   return session
 }
 
+/**
+ * Create a new temporary (unsaved) session.
+ * The session only lives in memory (React Query cache); it is NOT persisted to
+ * storage nor shown in the sidebar until saveTemporarySession() is called.
+ */
+export async function createTemporarySession(newSession: Omit<Session, 'id'>): Promise<Session> {
+  return await createSession(newSession, undefined, { temporary: true })
+}
+
+/**
+ * Persist a temporary session so it appears in the sidebar and can be resumed later.
+ * No-op (idempotent) if the session is not marked temporary.
+ * Returns the persisted session, or null if the session no longer exists.
+ */
+export async function saveTemporarySession(sessionId: string): Promise<Session | null> {
+  if (!isTemporarySession(sessionId)) {
+    // Already persisted (or unknown) — nothing to do.
+    return await getSession(sessionId)
+  }
+
+  // Wait for any unsettled streams to settle so the snapshot includes the latest messages.
+  // (Dynamic import to avoid a circular dependency: session modules import chatStore.)
+  const { waitForUnsettledStreamDrains } = await import('./session/state.js')
+  await waitForUnsettledStreamDrains(sessionId)
+
+  const session = await getSession(sessionId)
+  if (!session) {
+    return null
+  }
+
+  await storage.setItemNow(StorageKeyGenerator.session(sessionId), session)
+
+  const metaStorage = await getMetaStorage()
+  const record: SessionMetaRecord = {
+    ...getSessionMeta(session),
+    sortOrder: Date.now(),
+    createdAt: Date.now(),
+  }
+  await metaStorage.create(record)
+  updateSessionListData((items) => sortSessionRecords([...items, record]))
+
+  unmarkSessionTemporary(sessionId)
+  return session
+}
+
 const sessionUpdateQueues: Record<string, UpdateQueue<Session>> = {}
 
 export async function updateSessionWithMessages(
@@ -353,6 +411,18 @@ export async function updateSessionWithMessages(
   updater: Updater<Session>,
   options?: { preserveCachedGeneratingMessages?: boolean }
 ) {
+  // 临时会话：仅更新内存缓存，绝不写盘、不更新 meta/会话列表
+  if (isTemporarySession(sessionId)) {
+    const cached = queryClient.getQueryData<Session | undefined>(QueryKeys.ChatSession(sessionId))
+    if (!cached) {
+      throw new Error(`Session ${sessionId} not found`)
+    }
+    const updated =
+      typeof updater === 'function' ? updater(cached) : ({ ...cached, ...updater } as Session)
+    _setSessionCache(sessionId, updated, options)
+    return updated
+  }
+
   if (!sessionUpdateQueues[sessionId]) {
     // do not use await here to avoid data race
     sessionUpdateQueues[sessionId] = new UpdateQueue<Session>(
@@ -485,6 +555,12 @@ function cleanupDeletedSessionRuntimeState(id: string) {
 
 export async function deleteSession(id: string) {
   console.debug('chatStore', 'deleteSession', id)
+  // 临时会话未落盘：只清理内存缓存与运行时状态，不触碰 storage/meta
+  if (isTemporarySession(id)) {
+    cleanupDeletedSessionRuntimeState(id)
+    unmarkSessionTemporary(id)
+    return
+  }
   await cleanupSessionAttachmentRagEntries([id], 'session deletion')
   await storage.removeItem(StorageKeyGenerator.session(id))
   const metaStorage = await getMetaStorage()

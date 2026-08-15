@@ -1,8 +1,10 @@
 import NiceModal from '@ebay/nice-modal-react'
-import { Box, Button } from '@mantine/core'
+import { Box, Button, Flex, Text } from '@mantine/core'
 import type { ModelProvider } from '@shared/types'
+import { IconAlertTriangle } from '@tabler/icons-react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useAtomValue } from 'jotai'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from 'zustand'
 import { JK_PAGE_NAMES } from '@/analytics/jk-events'
@@ -20,10 +22,12 @@ import useVersion from '@/hooks/useVersion'
 import { defaultSessionsForCN, defaultSessionsForEN } from '@/packages/initial_data'
 import * as remote from '@/packages/remote'
 import { useAuthInfoStore } from '@/stores/authInfoStore'
-import { updateSession as updateSessionStore, useSession } from '@/stores/chatStore'
+import { temporarySessionIdsAtom } from '@/stores/atoms/sessionAtoms'
+import { saveTemporarySession, updateSession as updateSessionStore, useSession } from '@/stores/chatStore'
 import { applyChatboxLicenseDefaultModelToSession } from '@/stores/defaultChatModel'
 import { lastUsedModelStore } from '@/stores/lastUsedModelStore'
 import * as scrollActions from '@/stores/scrollActions'
+import * as toastActions from '@/stores/toastActions'
 import {
   countCancellableGeneratingAssistantMessages,
   getGenerationControlMessages,
@@ -55,6 +59,23 @@ function RouteComponent() {
   const navigate = useNavigate()
   const { session: currentSession, isFetching } = useSession(currentSessionId)
   const { providers } = useProviders()
+  const temporarySessionIds = useAtomValue(temporarySessionIdsAtom)
+  const isTemporarySession = currentSession ? temporarySessionIds.has(currentSession.id) : false
+  const [isSavingSession, setIsSavingSession] = useState(false)
+
+  const handleSaveTemporarySession = useCallback(async () => {
+    if (!currentSession || isSavingSession) return
+    setIsSavingSession(true)
+    try {
+      await saveTemporarySession(currentSession.id)
+      toastActions.add(t('Conversation saved to your chat list') || '')
+    } catch (error) {
+      console.error('Failed to save temporary session:', error)
+      toastActions.add(t('Failed to save conversation') || '')
+    } finally {
+      setIsSavingSession(false)
+    }
+  }, [currentSession, isSavingSession, t])
   const licenseKey = useSettingsStore((s) => s.licenseKey)
   const hasLicense = Boolean(licenseKey)
   const licenseDetail = useSettingsStore((s) => s.licenseDetail)
@@ -249,6 +270,34 @@ function RouteComponent() {
   return currentSession ? (
     <div className={`flex flex-col h-full ${!isSmallScreen ? 'relative' : ''}`}>
       <Header session={currentSession} />
+
+      {isTemporarySession && (
+        <Flex
+          align="center"
+          gap="xs"
+          px="md"
+          py="xs"
+          className="flex-none border-b"
+          style={{
+            backgroundColor: 'var(--chatbox-background-warning-secondary)',
+            borderColor: 'var(--chatbox-border-warning)',
+          }}
+        >
+          <IconAlertTriangle size={16} className="shrink-0" style={{ color: 'var(--chatbox-tint-warning)' }} />
+          <Text size="sm" className="flex-1 min-w-0" truncate c="chatbox-secondary">
+            {t('This conversation is temporary and not saved. Save it to keep it.')}
+          </Text>
+          <Button
+            size="xs"
+            variant="filled"
+            color="chatbox-brand"
+            loading={isSavingSession}
+            onClick={() => void handleSaveTemporarySession()}
+          >
+            {t('Save conversation')}
+          </Button>
+        </Flex>
+      )}
 
       {/* MessageList 设置 key，确保每个 session 对应新的 MessageList 实例 */}
       <MessageList

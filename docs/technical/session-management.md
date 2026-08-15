@@ -109,6 +109,51 @@ Chatbox 的会话系统围绕四个核心实体构建：
 
 ---
 
+## 临时会话（Temporary Session）
+
+> 关联实现：`src/renderer/stores/atoms/sessionAtoms.ts`（`temporarySessionIdsAtom`）、`src/renderer/stores/chatStore.ts`（`createTemporarySession` / `saveTemporarySession`）
+
+### 核心概念
+
+临时会话 = 对话默认不保存。新会话默认进入临时模式，内容只存在于内存（React Query 缓存）中，**不写入持久化存储**（IndexedDB 会话数据与列表元数据），关闭应用或刷新后即丢失。用户点击输入框旁的"保存会话"按钮后，会话才会被持久化，作为普通会话出现在侧边栏，可继续对话。
+
+### 标识机制
+
+- 纯内存的 jotai 集合 `temporarySessionIdsAtom: atom<Set<string>>` 记录当前运行期内的临时会话 ID。
+- 不修改 `SessionSchema`，不影响 storage 迁移（Config Version 13）。
+- Helper：`isTemporarySession(id)` / `markSessionTemporary(id)` / `unmarkSessionTemporary(id)`。
+
+### 工作流程
+
+```
+用户新建对话（默认临时）
+    ↓ createTemporarySession()（只写缓存 + 标记临时）
+    ↓ 发送消息 / 流式 / 命名更新 —— 全部拦截，仅更新内存缓存
+    ↓
+用户点击"保存会话" → saveTemporarySession()
+    ↓ 写入 storage（会话数据） + metaStorage（列表元数据）
+    ↓ 移除临时标记 → 会话出现在侧边栏，下次可继续
+```
+
+### 写路径拦截
+
+- [`updateSessionWithMessages`](../../src/renderer/stores/chatStore.ts) 开头检测临时会话，跳过 `storage.setItemNow`、`metaStorage.update`、`updateSessionListData`，仅通过 `_setSessionCache` 更新缓存。
+- `updateSession`（命名等元数据更新）、`persistStreamingMessage`、`insertMessage` 等最终都汇聚到上述核心函数，自动被拦截。
+- 流式期间 `updateStreamingCache` 本身只写缓存，无需改动。
+- `deleteSession` 对临时会话仅清理缓存与临时集合，不触碰 storage。
+
+### 产品开关
+
+设置页（General → Conversation Defaults）提供"New conversations are temporary by default"开关（`newSessionTemporaryByDefault`，默认开启）。关闭后新会话回归传统持久化行为。
+
+### 边界情况
+
+- 刷新/重启：`currentSessionIdAtom`（atomWithStorage）可能记住临时会话 ID，但 IndexedDB 中无数据，会显示 "Conversation not found" 空态，用户可返回首页。
+- 保存时若存在未稳定的流式输出，`saveTemporarySession` 会等待 `waitForUnsettledStreamDrains` 以确保快照完整。
+- 临时会话中上传附件走 SessionAttachment RAG（desktop）会写入 SQLite 索引；若会话不保存即关闭可能残留孤儿索引（MVP 可接受）。
+
+---
+
 ## 线程历史管理
 
 线程系统为用户提供在同一会话中管理多个话题的能力，避免频繁创建新会话。

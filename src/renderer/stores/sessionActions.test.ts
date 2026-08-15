@@ -18,6 +18,8 @@ const {
   updateSessionWithMessages,
   updateSessionMock,
   createSessionMock,
+  createTemporarySessionMock,
+  saveTemporarySessionMock,
   useSessionMock,
   getSessionMock,
   listAllSessionsMetaMock,
@@ -32,6 +34,8 @@ const {
   updateSessionWithMessages: vi.fn(),
   updateSessionMock: vi.fn(),
   createSessionMock: vi.fn(),
+  createTemporarySessionMock: vi.fn(),
+  saveTemporarySessionMock: vi.fn(),
   useSessionMock: vi.fn(),
   getSessionMock: vi.fn(),
   listAllSessionsMetaMock: vi.fn(),
@@ -96,6 +100,8 @@ vi.mock('./chatStore', () => ({
   updateSessionWithMessages,
   updateSession: updateSessionMock,
   createSession: createSessionMock,
+  createTemporarySession: createTemporarySessionMock,
+  saveTemporarySession: saveTemporarySessionMock,
   getSession: getSessionMock,
   useSession: useSessionMock,
   listAllSessionsMeta: listAllSessionsMetaMock,
@@ -216,6 +222,8 @@ beforeEach(() => {
   updateSessionWithMessages.mockReset()
   updateSessionMock.mockReset()
   createSessionMock.mockReset()
+  createTemporarySessionMock.mockReset()
+  saveTemporarySessionMock.mockReset()
   useSessionMock.mockReset()
   getSessionMock.mockReset()
   listAllSessionsMetaMock.mockReset()

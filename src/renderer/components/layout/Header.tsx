@@ -1,14 +1,16 @@
 import NiceModal from '@ebay/nice-modal-react'
-import { ActionIcon, Flex, Text } from '@mantine/core'
+import { ActionIcon, Badge, Flex, Text } from '@mantine/core'
 import type { Session } from '@shared/types'
 import { IconLayoutSidebarLeftExpand, IconMenu2 } from '@tabler/icons-react'
 import clsx from 'clsx'
+import { useAtomValue } from 'jotai'
 import { PencilIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import useNeedRoomForWinControls from '@/hooks/useNeedRoomForWinControls'
 import { useIsSmallScreen } from '@/hooks/useScreenChange'
+import { temporarySessionIdsAtom } from '@/stores/atoms/sessionAtoms'
 import { scheduleGenerateNameAndThreadName, scheduleGenerateThreadName } from '@/stores/sessionActions'
 import * as settingActions from '@/stores/settingActions'
 import { useUIStore } from '@/stores/uiStore'
@@ -26,6 +28,9 @@ export default function Header(props: { session: Session }) {
   const { needRoomForMacWindowControls } = useNeedRoomForWinControls()
 
   const { session: currentSession } = props
+
+  const temporarySessionIds = useAtomValue(temporarySessionIdsAtom)
+  const isTemporarySession = Boolean(currentSession?.id) && temporarySessionIds.has(currentSession.id)
 
   useEffect(() => {
     const autoGenerateTitle = settingActions.getAutoGenerateTitle()
@@ -80,6 +85,23 @@ export default function Header(props: { session: Session }) {
           <Text fw={600} fz={18} lh="24px" truncate="end" className="min-w-0">
             {currentSession?.name}
           </Text>
+          {isTemporarySession && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  size="sm"
+                  variant="light"
+                  color="chatbox-brand"
+                  ml={6}
+                  className="shrink-0 cursor-default"
+                  data-testid="temporary-session-badge"
+                >
+                  {t('Temporary')}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{t('This conversation is temporary and not saved. Save it to keep it.')}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <ActionIcon

@@ -105,6 +105,8 @@ export function settings(): Settings {
 
     autoGenerateTitle: true,
 
+    newSessionTemporaryByDefault: true,
+
     autoCompaction: true,
     compactionThreshold: 0.6,
 

@@ -172,7 +172,8 @@ dist
 electron-builder.env
 
 # Share VS Code settings
-# .vscode
+.vscode/
+chatbox.code-workspace
 
 
 **/routeTree.gen.ts

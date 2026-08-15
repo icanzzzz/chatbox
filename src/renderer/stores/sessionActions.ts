@@ -10,6 +10,8 @@ export {
   switchToIndex,
   switchToNext,
 } from './session/crud'
+// Temporary session helpers (defined in chatStore)
+export { createTemporarySession, saveTemporarySession } from './chatStore'
 // Re-export export operations from session/export.ts
 export { exportSessionChat } from './session/export'
 // Re-export fork operations from session/forks.ts

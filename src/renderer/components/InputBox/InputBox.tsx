@@ -22,6 +22,7 @@ import {
   IconArrowUp,
   IconChevronRight,
   IconCirclePlus,
+  IconDeviceFloppy,
   IconFilePencil,
   IconFolder,
   IconPhoto,
@@ -251,6 +252,24 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
 
     const currentSessionId = sessionId
     const isNewSession = currentSessionId === 'new'
+    const temporarySessionIds = useAtomValue(atoms.temporarySessionIdsAtom)
+    const isTemporarySession =
+      !isNewSession && currentSessionId != null && temporarySessionIds.has(currentSessionId)
+    const [isSavingSession, setIsSavingSession] = useState(false)
+
+    const handleSaveTemporarySession = useCallback(async () => {
+      if (!currentSessionId || isSavingSession) return
+      setIsSavingSession(true)
+      try {
+        await chatStore.saveTemporarySession(currentSessionId)
+        toastActions.add(t('Conversation saved to your chat list') || '')
+      } catch (error) {
+        console.error('Failed to save temporary session:', error)
+        toastActions.add(t('Failed to save conversation') || '')
+      } finally {
+        setIsSavingSession(false)
+      }
+    }, [currentSessionId, isSavingSession, t])
 
     // Session-level web browsing mode
     const sessionWebBrowsingMap = useUIStore((s) => s.sessionWebBrowsingMap)
@@ -1481,6 +1500,25 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
               />
+
+              {/* Save temporary session */}
+              {isTemporarySession && (
+                <Tooltip label={t('Save conversation') || ''} disabled={isSavingSession} withArrow>
+                  <ActionIcon
+                    data-testid="save-session"
+                    aria-label={t('Save conversation') || ''}
+                    loading={isSavingSession}
+                    size={32}
+                    variant="subtle"
+                    color="chatbox-brand"
+                    radius="lg"
+                    className="shrink-0 mb-1"
+                    onClick={() => void handleSaveTemporarySession()}
+                  >
+                    <ScalableIcon icon={IconDeviceFloppy} size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
 
               {/* Send Button */}
               <Tooltip

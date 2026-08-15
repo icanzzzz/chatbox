@@ -550,6 +550,9 @@ export const SettingsSchema = GlobalSessionSettingsSchema.extend({
 
   autoGenerateTitle: z.boolean().default(true),
 
+  // 新会话默认进入"临时会话"模式（对话默认不保存，直到用户点击保存）
+  newSessionTemporaryByDefault: z.boolean().default(true),
+
   autoCompaction: z.boolean().default(true),
   compactionThreshold: z.number().min(0.4).max(0.9).default(0.6),
 
