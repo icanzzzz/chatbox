@@ -200,3 +200,6 @@ tmp_*.*
 
 # Local pnpm store accidentally created by pnpm install in worktrees
 .pnpm-store/
+
+# Local Windows code-signing hook (production version is injected by CI)
+custom_win_sign.js
