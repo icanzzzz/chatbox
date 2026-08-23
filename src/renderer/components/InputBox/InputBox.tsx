@@ -1509,10 +1509,10 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                     aria-label={t('Save conversation') || ''}
                     loading={isSavingSession}
                     size={32}
-                    variant="subtle"
+                    variant="light"
                     color="chatbox-brand"
                     radius="lg"
-                    className="shrink-0 mb-1"
+                    className="shrink-0 mb-1 mx-1.5"
                     onClick={() => void handleSaveTemporarySession()}
                   >
                     <ScalableIcon icon={IconDeviceFloppy} size={18} />
