@@ -1,3 +1,8 @@
+import i18n from '@/i18n'
+import { isTemporarySession } from './atoms/sessionAtoms'
+import * as chatStore from './chatStore'
+import * as toastActions from './toastActions'
+
 // Re-export CRUD operations from session/crud.ts
 export {
   _copySession,
@@ -62,3 +67,20 @@ export {
   startNewThread,
   switchThread,
 } from './session/threads'
+
+/**
+ * Persist the given temporary session and surface a toast result.
+ * No-op when the session is not temporary (already persisted / unknown).
+ */
+export async function saveTemporarySessionWithNotify(sessionId: string): Promise<void> {
+  if (!isTemporarySession(sessionId)) {
+    return
+  }
+  try {
+    await chatStore.saveTemporarySession(sessionId)
+    toastActions.add(i18n.t('Conversation saved to your chat list'))
+  } catch (error) {
+    console.error('Failed to save temporary session:', error)
+    toastActions.add(i18n.t('Failed to save conversation'))
+  }
+}

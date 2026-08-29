@@ -132,6 +132,7 @@ export function settings(): Settings {
       dialogOpenSearch: 'mod+k', // 打开搜索对话框的快捷键
       inputBoxSendMessage: 'Enter', // 发送消息的快捷键
       inputBoxSendMessageWithoutResponse: 'Ctrl+Enter', // 发送但不生成回复的快捷键
+      saveTemporarySession: 'mod+s', // 保存当前临时会话的快捷键
       optionNavUp: 'up', // 选项导航的快捷键
       optionNavDown: 'down', // 选项导航的快捷键
       optionSelect: 'enter', // 选项导航的快捷键

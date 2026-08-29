@@ -93,6 +93,7 @@ describe('defaults', () => {
         'dialogOpenSearch',
         'inputBoxSendMessage',
         'inputBoxSendMessageWithoutResponse',
+        'saveTemporarySession',
         'optionNavUp',
         'optionNavDown',
         'optionSelect',
@@ -100,6 +101,7 @@ describe('defaults', () => {
     )
     expect(result.messageListRefreshContext).toBe('mod+shift+n')
     expect(result.newPictureChat).toBe('')
+    expect(result.saveTemporarySession).toBe('mod+s')
   })
 
   it('newConfigs() returns object with uuid string', () => {

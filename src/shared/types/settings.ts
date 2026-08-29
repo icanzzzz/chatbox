@@ -316,6 +316,8 @@ const ShortcutSettingSchema = z.preprocess(
     optionSelect: z.string(),
     inputBoxSendMessage: ShortcutSendValueSchema,
     inputBoxSendMessageWithoutResponse: ShortcutSendValueSchema,
+    // Save the current temporary session (persist it to the chat list).
+    saveTemporarySession: z.string().default('mod+s'),
   })
 )
 

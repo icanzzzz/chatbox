@@ -82,6 +82,7 @@ import * as atoms from '@/stores/atoms'
 import { compactionUIStateMapAtom } from '@/stores/atoms/compactionAtoms'
 import * as chatStore from '@/stores/chatStore'
 import { useSession, useSessionSettings } from '@/stores/chatStore'
+import { saveTemporarySessionWithNotify } from '@/stores/sessionActions'
 import { useSessionAgentMode } from '@/stores/session/agent-mode'
 import { settingsStore, useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -261,15 +262,11 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
       if (!currentSessionId || isSavingSession) return
       setIsSavingSession(true)
       try {
-        await chatStore.saveTemporarySession(currentSessionId)
-        toastActions.add(t('Conversation saved to your chat list') || '')
-      } catch (error) {
-        console.error('Failed to save temporary session:', error)
-        toastActions.add(t('Failed to save conversation') || '')
+        await saveTemporarySessionWithNotify(currentSessionId)
       } finally {
         setIsSavingSession(false)
       }
-    }, [currentSessionId, isSavingSession, t])
+    }, [currentSessionId, isSavingSession])
 
     // Session-level web browsing mode
     const sessionWebBrowsingMap = useUIStore((s) => s.sessionWebBrowsingMap)

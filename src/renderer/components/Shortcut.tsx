@@ -139,6 +139,11 @@ export function ShortcutConfig(props: {
       keys: shortcuts.newChat,
     },
     {
+      label: t('Save Temporary Conversation'),
+      name: 'saveTemporarySession',
+      keys: shortcuts.saveTemporarySession,
+    },
+    {
       label: t('New Thread'),
       name: 'messageListRefreshContext',
       keys: shortcuts.messageListRefreshContext,

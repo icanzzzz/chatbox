@@ -6,7 +6,7 @@ import { uiStore } from '@/stores/uiStore'
 import { getOS } from '../packages/navigator'
 import platform from '../platform'
 import { currentSessionIdAtom } from '../stores/atoms'
-import { startNewThread, switchToIndex, switchToNext } from '../stores/sessionActions'
+import { saveTemporarySessionWithNotify, startNewThread, switchToIndex, switchToNext } from '../stores/sessionActions'
 import { settingsStore } from '../stores/settingsStore'
 import * as dom from './dom'
 import { useIsSmallScreen } from './useScreenChange'
@@ -103,6 +103,15 @@ export default function useShortcut() {
       router.navigate({
         to: '/image-creator',
       })
+      return
+    }
+    // 保存当前临时会话 CmdOrCtrl + S
+    if (isShortcutPressed(e, shortcuts.saveTemporarySession)) {
+      e.preventDefault()
+      const sid = getRouteSessionId()
+      if (sid) {
+        void saveTemporarySessionWithNotify(sid)
+      }
       return
     }
     if (e.code === 'Tab' && ctrlKey && !shift) {

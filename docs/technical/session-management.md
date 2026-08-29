@@ -130,7 +130,7 @@ Chatbox 的会话系统围绕四个核心实体构建：
     ↓ createTemporarySession()（只写缓存 + 标记临时）
     ↓ 发送消息 / 流式 / 命名更新 —— 全部拦截，仅更新内存缓存
     ↓
-用户点击"保存会话" → saveTemporarySession()
+用户点击"保存会话"按钮，或按 Cmd/Ctrl+S 快捷键 → saveTemporarySessionWithNotify() → saveTemporarySession()
     ↓ 写入 storage（会话数据） + metaStorage（列表元数据）
     ↓ 移除临时标记 → 会话出现在侧边栏，下次可继续
 ```
@@ -145,6 +145,11 @@ Chatbox 的会话系统围绕四个核心实体构建：
 ### 产品开关
 
 设置页（General → Conversation Defaults）提供"New conversations are temporary by default"开关（`newSessionTemporaryByDefault`，默认开启）。关闭后新会话回归传统持久化行为。
+
+### 快捷键
+
+- 快捷键配置项 `saveTemporarySession`（默认 `mod+s`，即 Windows/Linux 的 Ctrl+S、macOS 的 Cmd+S），在设置页 Keyboard Shortcuts 中可改。
+- 全局监听位于 [`useShortcut`](../../src/renderer/hooks/useShortcut.tsx)，按钮与快捷键共用 [`saveTemporarySessionWithNotify`](../../src/renderer/stores/sessionActions.ts)（幂等：非临时会话静默返回）。
 
 ### 边界情况
 

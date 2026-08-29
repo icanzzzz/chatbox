@@ -223,6 +223,7 @@
   "Failed to save conversation": "保存对话失败",
   "New conversations are temporary by default": "新对话默认临时保存",
   "Save conversation": "保存对话",
+  "Save Temporary Conversation": "保存临时对话",
   "Temporary": "临时",
   "This conversation is temporary and not saved. Save it to keep it.": "此对话为临时对话，尚未保存。点击保存可保留此对话。",
   "When enabled, new conversations start as temporary and are not saved until you click the save button.":
